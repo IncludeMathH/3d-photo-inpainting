@@ -21,5 +21,5 @@ mkdir -p BoostingMonocularDepth/pix2pix/checkpoints/mergemodel/
 echo "downloading mergenet weights ..."
 wget https://filebox.ece.vt.edu/~jbhuang/project/3DPhoto/model/latest_net_G.pth
 mv latest_net_G.pth BoostingMonocularDepth/pix2pix/checkpoints/mergemodel/
-wget https://github.com/intel-isl/MiDaS/releases/download/v2/model-f46da743.pt
+wget --no-check-certificate https://github.com/intel-isl/MiDaS/releases/download/v2/model-f46da743.pt
 mv model-f46da743.pt BoostingMonocularDepth/midas/model.pt

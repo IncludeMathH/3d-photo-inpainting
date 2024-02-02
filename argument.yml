@@ -2,7 +2,7 @@ depth_edge_model_ckpt: checkpoints/edge-model.pth
 depth_feat_model_ckpt: checkpoints/depth-model.pth
 rgb_feat_model_ckpt: checkpoints/color-model.pth
 MiDaS_model_ckpt: MiDaS/model.pt
-use_boostmonodepth: True
+use_boostmonodepth: False
 fps: 40
 num_frames: 240
 x_shift_range: [0.00, 0.00, -0.015, -0.015]
@@ -12,18 +12,18 @@ traj_types: ['double-straight-line', 'double-straight-line', 'circle', 'circle']
 video_postfix: ['dolly-zoom-in', 'zoom-in', 'circle', 'swing']
 specific: ''
 longer_side_len: 960
-src_folder: image
-depth_folder: depth
-mesh_folder: mesh
-video_folder: video
+src_folder: image/dispnet_share
+depth_folder: depth/dispnet_share
+mesh_folder: mesh/dispnet_share
+video_folder: video/dispnet_share
 load_ply: False
 save_ply: True
 inference_video: True
 gpu_ids: 0
-offscreen_rendering: False
-img_format: '.jpg'
+offscreen_rendering: True
+img_format: '.png'
 depth_format: '.npy'
-require_midas: True
+require_midas: False
 depth_threshold: 0.04
 ext_edge_threshold: 0.002
 sparse_iter: 5
