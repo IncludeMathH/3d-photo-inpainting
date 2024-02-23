@@ -1,5 +1,5 @@
 from  moviepy.editor import *
-import glob, argparse
+import glob, argparse, os
 
 def parse_args():
     parser = argparse.ArgumentParser(description='generate stereo video')
@@ -10,7 +10,8 @@ def parse_args():
     return args
 
 def main():
-    for left in glob.glob('video/IGEV/*_left_*.mp4'):
+    args = parse_args()
+    for left in glob.glob(os.path.join(args.input, '*_left_*.mp4')):
         right = left.replace('_left_', '_right_')
         clips = [VideoFileClip(left), VideoFileClip(right)]
         video = clips_array([clips])
