@@ -1,6 +1,3 @@
-#ignore all kind of files
-*.*
-#except php files
 !*.py
 !*.yml
 !*.txt
@@ -12,3 +9,8 @@ video/
 !misc/moon_40.gif
 image/
 BoostingMonocularDepth/
+*__pycache__*
+checkpoints/
+mesh/
+*.pt
+data/

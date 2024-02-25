@@ -2294,3 +2294,103 @@ def output_3d_photo(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, 
 
 
     return normal_canvas, all_canvas
+
+
+def output_novel_view(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses, video_traj_types, ref_pose,
+                    output_dir, ref_image, int_mtx, config, image, videos_poses, video_basename, original_H=None, original_W=None,
+                    border=None, depth=None, normal_canvas=None, all_canvas=None, mean_loc_depth=None, tgt_pose=None):
+
+    cam_mesh = netx.Graph()
+    cam_mesh.graph['H'] = Height
+    cam_mesh.graph['W'] = Width
+    cam_mesh.graph['original_H'] = original_H
+    cam_mesh.graph['original_W'] = original_W
+    int_mtx_real_x = int_mtx[0] * Width
+    int_mtx_real_y = int_mtx[1] * Height
+    cam_mesh.graph['hFov'] = 2 * np.arctan((1. / 2.) * ((cam_mesh.graph['original_W']) / int_mtx_real_x[0]))
+    cam_mesh.graph['vFov'] = 2 * np.arctan((1. / 2.) * ((cam_mesh.graph['original_H']) / int_mtx_real_y[1]))
+    colors = colors[..., :3]
+
+    fov_in_rad = max(cam_mesh.graph['vFov'], cam_mesh.graph['hFov'])
+    fov = (fov_in_rad * 180 / np.pi)
+    print("fov: " + str(fov))
+    init_factor = 1
+    if config.get('anti_flickering') is True:
+        init_factor = 3
+    if (cam_mesh.graph['original_H'] is not None) and (cam_mesh.graph['original_W'] is not None):
+        canvas_w = cam_mesh.graph['original_W']
+        canvas_h = cam_mesh.graph['original_H']
+    else:
+        canvas_w = cam_mesh.graph['W']
+        canvas_h = cam_mesh.graph['H']
+    canvas_size = max(canvas_h, canvas_w)
+    if normal_canvas is None:
+        normal_canvas = Canvas_view(fov,
+                                    verts,
+                                    faces,
+                                    colors,
+                                    canvas_size=canvas_size,
+                                    factor=init_factor,
+                                    bgcolor='gray',
+                                    proj='perspective')
+    else:
+        normal_canvas.reinit_mesh(verts, faces, colors)
+        normal_canvas.reinit_camera(fov)
+    img = normal_canvas.render()
+    backup_img, backup_all_img, all_img_wo_bound = img.copy(), img.copy() * 0, img.copy() * 0
+    img = cv2.resize(img, (int(img.shape[1] / init_factor), int(img.shape[0] / init_factor)), interpolation=cv2.INTER_AREA)
+    if border is None:
+        border = [0, img.shape[0], 0, img.shape[1]]
+    H, W = cam_mesh.graph['H'], cam_mesh.graph['W']
+    if (cam_mesh.graph['original_H'] is not None) and (cam_mesh.graph['original_W'] is not None):
+        aspect_ratio = cam_mesh.graph['original_H'] / cam_mesh.graph['original_W']
+    else:
+        aspect_ratio = cam_mesh.graph['H'] / cam_mesh.graph['W']
+    if aspect_ratio > 1:
+        img_h_len = cam_mesh.graph['H'] if cam_mesh.graph.get('original_H') is None else cam_mesh.graph['original_H']
+        img_w_len = img_h_len / aspect_ratio
+        anchor = [0,
+                  img.shape[0],
+                  int(max(0, int((img.shape[1])//2 - img_w_len//2))),
+                  int(min(int((img.shape[1])//2 + img_w_len//2), (img.shape[1])-1))]
+    elif aspect_ratio <= 1:
+        img_w_len = cam_mesh.graph['W'] if cam_mesh.graph.get('original_W') is None else cam_mesh.graph['original_W']
+        img_h_len = img_w_len * aspect_ratio
+        anchor = [int(max(0, int((img.shape[0])//2 - img_h_len//2))),
+                  int(min(int((img.shape[0])//2 + img_h_len//2), (img.shape[0])-1)),
+                  0,
+                  img.shape[1]]
+    anchor = np.array(anchor)
+    plane_width = np.tan(fov_in_rad/2.) * np.abs(mean_loc_depth)
+
+    rel_pose = np.linalg.inv(np.dot(tgt_pose, np.linalg.inv(ref_pose)))
+    axis, angle = transforms3d.axangles.mat2axangle(rel_pose[0:3, 0:3])
+    normal_canvas.rotate(axis=axis, angle=(angle*180)/np.pi)
+    normal_canvas.translate(rel_pose[:3,3])
+    new_mean_loc_depth = mean_loc_depth - float(rel_pose[2, 3])
+    normal_canvas.reinit_camera(fov)
+    normal_canvas.view_changed()
+    img = normal_canvas.render()
+    img = cv2.GaussianBlur(img,(int(init_factor//2 * 2 + 1), int(init_factor//2 * 2 + 1)), 0)
+    img = cv2.resize(img, (int(img.shape[1] / init_factor), int(img.shape[0] / init_factor)), interpolation=cv2.INTER_AREA)
+    img = img[anchor[0]:anchor[1], anchor[2]:anchor[3]]
+    img = img[int(border[0]):int(border[1]), int(border[2]):int(border[3])]
+
+    if any(np.array(config['crop_border']) > 0.0):
+        H_c, W_c, _ = img.shape
+        o_t = int(H_c * config['crop_border'][0])
+        o_l = int(W_c * config['crop_border'][1])
+        o_b = int(H_c * config['crop_border'][2])
+        o_r = int(W_c * config['crop_border'][3])
+        img = img[o_t:H_c-o_b, o_l:W_c-o_r]
+        img = cv2.resize(img, (W_c, H_c), interpolation=cv2.INTER_CUBIC)
+    stereo = img[..., :3]
+    normal_canvas.translate(-rel_pose[:3,3])
+    normal_canvas.rotate(axis=axis, angle=-(angle*180)/np.pi)
+    normal_canvas.view_changed()
+
+    # ====================
+    atop = 0; abuttom = img.shape[0] - img.shape[0] % 2; aleft = 0; aright = img.shape[1] - img.shape[1] % 2
+    stereo = (stereo[atop:abuttom, aleft:aright, :3] * 1).astype(np.uint8)
+
+    return stereo
