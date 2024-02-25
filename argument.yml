@@ -14,8 +14,8 @@ specific: ''
 longer_side_len: 960
 src_folder: image/dispnet_share
 depth_folder: depth/dispnet_share
-mesh_folder: mesh/dispnet_share
-video_folder: video/dispnet_share
+mesh_folder: mesh/dispnet_share_test
+video_folder: video/dispnet_share_test
 load_ply: False
 save_ply: True
 inference_video: True
