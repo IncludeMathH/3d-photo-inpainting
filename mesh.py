@@ -2364,7 +2364,7 @@ def output_novel_view(verts, colors, faces, Height, Width, hFov, vFov, tgt_poses
     anchor = np.array(anchor)
     plane_width = np.tan(fov_in_rad/2.) * np.abs(mean_loc_depth)
 
-    rel_pose = np.linalg.inv(np.dot(tgt_pose, np.linalg.inv(ref_pose)))
+    rel_pose = np.dot(ref_pose, np.linalg.inv(tgt_pose))
     axis, angle = transforms3d.axangles.mat2axangle(rel_pose[0:3, 0:3])
     normal_canvas.rotate(axis=axis, angle=(angle*180)/np.pi)
     normal_canvas.translate(rel_pose[:3,3])

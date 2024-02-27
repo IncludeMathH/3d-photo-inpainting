@@ -4,6 +4,9 @@ import csv
 from skimage.metrics import structural_similarity as ssim
 import lpips
 import torch
+import glob
+import pandas as pd
+import os
 
 def calculate_metrics(true_image_path, generated_image_path):
     true_image = cv2.imread(true_image_path)
@@ -30,7 +33,7 @@ def calculate_metrics(true_image_path, generated_image_path):
 def save_metrics_to_csv(image_pairs, csv_file_path):
     with open(csv_file_path, 'w', newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(["True Image", "Generated Image", "SSIM", "PSNR", "LPIPS"])
+        writer.writerow(["Target Image", "Generated Image", "SSIM", "PSNR", "LPIPS"])
 
         ssim_sum, psnr_sum, lpips_sum = 0, 0, 0
 
@@ -45,11 +48,23 @@ def save_metrics_to_csv(image_pairs, csv_file_path):
         num_pairs = len(image_pairs)
         writer.writerow(["Average", "", ssim_sum / num_pairs, psnr_sum / num_pairs, lpips_sum / num_pairs])
 
-# 使用示例
-image_pairs = [
-    ('data/EuRoC/mav0/cam0/data/1403636579763555584.png', 'data/EuRoC/mav0/cam1/data/1403636579763555584.png'),
-    ('data/EuRoC/mav0/cam0/data/1403636583713555456.png', 'data/EuRoC/mav0/cam1/data/1403636583713555456.png'),
-    ('data/EuRoC/mav0/cam0/data/1403636591463555584.png', 'data/EuRoC/mav0/cam1/data/1403636591463555584.png'),
-    # 更多图像对...
-]
+csv_dir = 'work_dirs/sample_euroc/*.csv'
+files = glob.glob(csv_dir)
+dtype = {
+    'Reference Timestamp': str,
+    'Target Timestamp': str,
+}
+scene_name = os.path.basename(csv_dir).split('.')[0]
+
+image_pairs = []
+# 遍历所有的CSV文件
+for file in files:
+    # 读取CSV文件
+    data = pd.read_csv(file, dtype=dtype)
+    ref_imgs = data['Reference Timestamp'].tolist()
+    tgt_imgs = data['Target Timestamp'].tolist()
+    pred_list = [os.path.join('video/IGEV', scene_name + '-cam0-' + ref_stamp + '_novel_view.png') for ref_stamp in ref_imgs]
+    tgt_list = [os.path.join('data/EuRoC', scene_name, 'mav0', 'cam0', 'data',  tgt_stamp + '.png') for tgt_stamp in tgt_imgs]
+    image_pairs.extend(zip(tgt_list, pred_list))
+
 save_metrics_to_csv(image_pairs, 'metrics.csv')

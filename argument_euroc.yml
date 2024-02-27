@@ -12,7 +12,7 @@ traj_types: ['double-straight-line', 'double-straight-line', 'circle', 'circle']
 video_postfix: ['dolly-zoom-in', 'zoom-in', 'circle', 'swing']
 specific: ''
 longer_side_len: 960
-src_folder: image/EuRoC
+src_folder: data/EuRoC/sampled
 depth_folder: depth/IGEV
 mesh_folder: mesh/IGEV
 video_folder: video/IGEV
