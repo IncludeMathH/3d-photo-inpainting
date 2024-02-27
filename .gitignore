@@ -14,3 +14,4 @@ checkpoints/
 mesh/
 *.pt
 data/
+work_dirs/
