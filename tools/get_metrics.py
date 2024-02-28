@@ -68,5 +68,4 @@ for file in files:
     pred_list = [os.path.join('video/IGEV', scene_name + '-cam0-' + ref_stamp + '_novel_view.png') for ref_stamp in ref_imgs]
     tgt_list = [os.path.join('data/EuRoC', scene_name, 'mav0', 'cam0', 'data',  tgt_stamp + '.png') for tgt_stamp in tgt_imgs]
     image_pairs.extend(zip(tgt_list, pred_list))
-breakpoint()
-save_metrics_to_csv(image_pairs, 'metrics.csv')
+save_metrics_to_csv(image_pairs, 'work_dirs/metrics.csv')

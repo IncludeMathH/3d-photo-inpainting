@@ -99,6 +99,9 @@ print(f"running on device {device}")
 for idx in tqdm(range(len(sample_list))):
     depth = None
     sample = sample_list[idx]
+    pred_name = sample['src_pair_name']
+    if os.path.exists(os.path.join(config['video_folder'], f'{pred_name}_novel_view.png')):
+        continue
     print("Current Source ==> ", sample['src_pair_name'])
     mesh_fi = os.path.join(config['mesh_folder'], sample['src_pair_name'] +'.ply')
     image = imageio.imread(sample['ref_img_fi'])
@@ -210,6 +213,4 @@ for idx in tqdm(range(len(sample_list))):
                             image.copy(), copy.deepcopy(sample['int_mtx']), config, image,
                             videos_poses, video_basename, config.get('original_h'), config.get('original_w'), border=border, depth=depth, normal_canvas=normal_canvas, all_canvas=all_canvas,
                             mean_loc_depth=mean_loc_depth, tgt_pose=tgt_pose)
-    
-    pred_name = sample['src_pair_name']
     cv2.imwrite(os.path.join(config['video_folder'], f'{pred_name}_novel_view.png'), novel_view)
