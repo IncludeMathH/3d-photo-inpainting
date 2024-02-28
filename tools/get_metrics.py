@@ -11,6 +11,8 @@ import os
 def calculate_metrics(true_image_path, generated_image_path):
     true_image = cv2.imread(true_image_path)
     generated_image = cv2.imread(generated_image_path)
+    h, w, _ = generated_image.shape
+    true_image = cv2.resize(true_image, (w, h))
 
     assert true_image.shape == generated_image.shape, "Images must have the same dimensions."
 
@@ -54,11 +56,11 @@ dtype = {
     'Reference Timestamp': str,
     'Target Timestamp': str,
 }
-scene_name = os.path.basename(csv_dir).split('.')[0]
 
 image_pairs = []
 # 遍历所有的CSV文件
 for file in files:
+    scene_name = os.path.basename(file).split('.')[0]
     # 读取CSV文件
     data = pd.read_csv(file, dtype=dtype)
     ref_imgs = data['Reference Timestamp'].tolist()
@@ -66,5 +68,5 @@ for file in files:
     pred_list = [os.path.join('video/IGEV', scene_name + '-cam0-' + ref_stamp + '_novel_view.png') for ref_stamp in ref_imgs]
     tgt_list = [os.path.join('data/EuRoC', scene_name, 'mav0', 'cam0', 'data',  tgt_stamp + '.png') for tgt_stamp in tgt_imgs]
     image_pairs.extend(zip(tgt_list, pred_list))
-
+breakpoint()
 save_metrics_to_csv(image_pairs, 'metrics.csv')
